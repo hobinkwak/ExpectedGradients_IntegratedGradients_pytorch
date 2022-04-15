@@ -19,11 +19,13 @@ def integrated_gradients(model, data, target, n_iter, device='cuda', visualize=T
         x = input_x[i].unsqueeze(0)
         base = baseline[i].unsqueeze(0)
         scaled_x = base + alpha * (x - base)
-        scaled_x.requires_grad = True
-        y_hat = model(scaled_x)[:, target]
-        grad = torch.autograd.grad(y_hat, scaled_x,
-                                   grad_outputs=torch.ones_like(y_hat))[0]
-        integrated = grad.sum(axis=0) / n_iter
+        attribution = torch.zeros(*scaled_x.shape)
+        for i in range(n_iter):
+            part_scaled_x = scaled_x[i:i+1]
+            part_scaled_x.requires_grad = True
+            part_y_hat = model(part_scaled_x)[:, target]
+            attribution[i] = torch.autograd.grad(part_y_hat, part_scaled_x)[0]
+        integrated = attribution.sum(axis=0) / n_iter
         ig = (x - base) * integrated
         ig = ig.detach().cpu().numpy().squeeze()
         attributions.append(ig)
@@ -64,11 +66,13 @@ def expected_gradients(model, data, baseline, target, n_iter, device='cuda', vis
         x = input_x[i].unsqueeze(0)
         ref = sampled_baseline[i]
         scaled_x = ref + alpha * (x - ref)
-        scaled_x.requires_grad = True
-        y_hat = model(scaled_x)[:, target]
-        grad = torch.autograd.grad(y_hat, scaled_x,
-                                   grad_outputs=torch.ones_like(y_hat))[0]
-        integrated = grad.sum(axis=0) / n_iter
+        attribution = torch.zeros(*scaled_x.shape)
+        for i in range(n_iter):
+            part_scaled_x = scaled_x[i:i+1]
+            part_scaled_x.requires_grad = True
+            part_y_hat = model(part_scaled_x)[:, target]
+            attribution[i] = torch.autograd.grad(part_y_hat, part_scaled_x)[0]
+        integrated = attribution.sum(axis=0) / n_iter
         ig = (x - ref).mean(axis=0) * integrated
         ig = ig.detach().cpu().numpy().squeeze()
         attributions.append(ig)
