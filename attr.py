@@ -66,7 +66,7 @@ def expected_gradients(model, data, baseline, target, n_iter, device='cuda', vis
         x = input_x[i].unsqueeze(0)
         ref = sampled_baseline[i]
         scaled_x = ref + alpha * (x - ref)
-        attribution = torch.zeros(*scaled_x.shape)
+        attribution = torch.zeros(*scaled_x.shape).to(device)
         for i in range(n_iter):
             part_scaled_x = scaled_x[i:i+1]
             part_scaled_x.requires_grad = True
